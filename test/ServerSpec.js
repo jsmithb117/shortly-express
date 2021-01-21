@@ -372,7 +372,7 @@ describe('', function() {
       });
     });
 
-    xdescribe('Session Parser', function() {
+    describe('Session Parser', function() {
       it('initializes a new session when there are no cookies on the request', function(done) {
         var requestWithoutCookies = httpMocks.createRequest();
         var response = httpMocks.createResponse();
@@ -444,15 +444,16 @@ describe('', function() {
         db.query('INSERT INTO users (username) VALUES (?)', username, function(error, results) {
           if (error) { return done(error); }
           var userId = results.insertId;
-
+          // console.log('first session' + "\n")
           createSession(requestWithoutCookie, response, function() {
             var hash = requestWithoutCookie.session.hash;
+            // console.log('hash -> ' + hash, 'userId ' + userId);
             db.query('UPDATE sessions SET userId = ? WHERE hash = ?', [userId, hash], function(error, result) {
 
               var secondResponse = httpMocks.createResponse();
               var requestWithCookies = httpMocks.createRequest();
               requestWithCookies.cookies.shortlyid = hash;
-
+              // console.log('second session' + "\n")
               createSession(requestWithCookies, secondResponse, function() {
                 var session = requestWithCookies.session;
                 expect(session).to.be.an('object');
@@ -481,7 +482,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Sessions and cookies', function() {
+  describe('Sessions and cookies', function() {
     var requestWithSession;
     var cookieJar;
 
@@ -519,6 +520,7 @@ describe('', function() {
     });
 
     it('sets and stores a cookie on the client', function(done) {
+      // console.log('sets and stores a cookie on the client');
       requestWithSession('http://127.0.0.1:4568/', function(error, res, body) {
         if (error) { return done(error); }
         var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
@@ -557,12 +559,14 @@ describe('', function() {
           if (error) { return done(error); }
 
           var cookies = cookieJar.getCookies('http://127.0.0.1:4568/');
+          console.log('cookies: ' + cookies);
           var newCookieValue = cookies[0].value;
           expect(cookieValue).to.not.equal(newCookieValue);
 
           var queryString = 'SELECT * FROM sessions WHERE hash = ?';
           db.query(queryString, cookieValue, function(error2, sessions) {
             if (error2) { return done(error2); }
+            console.log('sessions: ', sessions);
             expect(sessions.length).to.equal(0);
             done();
           });
@@ -571,7 +575,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Privileged Access:', function() {
+  describe('Privileged Access:', function() {
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
       request('http://127.0.0.1:4568/', function(error, res, body) {
@@ -598,7 +602,7 @@ describe('', function() {
     });
   });
 
-  xdescribe('Link creation:', function() {
+  describe('Link creation:', function() {
 
     var cookies = request.jar();
     var requestWithSession = request.defaults({ jar: cookies });

@@ -1,4 +1,5 @@
-const parseCookies = (req, res, next) => {
+parseCookies = (req, res, next) => {
+  console.log('parsing cookies');
   if (req.headers.cookie !== undefined) {
     req.cookies = req.headers.cookie.replace((/[\=;]/gm), ',').split(',').reduce((parsedCookies, cookie, index, cookieArr) => {
       if (index % 2 === 0) {

@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const Auth = require('./middleware/auth');
 const models = require('./models');
 
+const cookieParser = require('./middleware/cookieParser');
 const app = express();
 
 app.set('views', `${__dirname}/views`);
@@ -15,7 +16,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
-
+app.use(cookieParser);
+app.use(Auth.createSession);
 
 app.get('/',
   (req, res) => {
@@ -81,7 +83,6 @@ app.post('/links',
 app.post('/login', (req, res, next) => {
   var username = req.body.username;
   var attempted = req.body.password;
-  // console.log(JSON.stringify(req.body));
   return models.Users.get({username: username})
     .then((results) => {
       let stored = results.password;
@@ -101,36 +102,43 @@ app.post('/login', (req, res, next) => {
       console.log('caught err---> ' + err);
       res.redirect('/login');
     });
-  // let test = models.Users.compare(attempted);
-
-  // if (boolean) {
-  //   res.redirect('/');
-  //   res.end();
-  // } else {
-  //   console.log('try again');
-  //   res.redirect('/login');
-  //   res.end();
-  // }
 });
 
 app.post('/signup', (req, res, next) => {
   var username = req.body.username;
   var password = req.body.password;
-
-  return models.Users.create({username, password})
+  // req.session.username = username;
+  Promise.resolve(models.Sessions.update({hash: req.session.hash}, {userId: req.session.userId}))
     .then(() => {
-      res.redirect('/');
-      res.end();
-    })
-    .error(err => {
-      throw new Error(err);
-    })
-    .catch((err) => {
-      res.redirect('/signup');
+      // console.log(req);
+      console.log('req.session: ', req.session);
+      console.log('req.cookies: ', req.cookies);
+      // console.log('req ' + req);
+      return models.Users.create({username, password})
+        .then(() => {
+
+          res.redirect('/');
+          res.end();
+        })
+        .error(err => {
+          throw new Error(err);
+        })
+        .catch((err) => {
+          res.redirect('/signup');
+        });
     });
 });
 
-
+app.get('/logout', (req, res, next) => {
+  console.log('get');
+  console.log('removing hash: ' + req.session.hash);
+  models.Sessions.deleteAll()
+    .then(() => {
+      req.cookies = null;
+      res.redirect('/');
+      next();
+    });
+});
 
 /************************************************************/
 // Handle the code parameter route last - if all other routes fail
