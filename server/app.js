@@ -24,6 +24,7 @@ app.use(Auth.createSession);
 
 
 
+
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
@@ -41,7 +42,7 @@ app.post('/login', (req, res, next) => {
     .then((boolean) => {
       if (boolean) {
         console.log('successful login');
-        req.isLoggedIn = true;
+        // req.isLoggedIn = true;
         res.redirect('/');
         res.end();
       } else {
@@ -50,8 +51,7 @@ app.post('/login', (req, res, next) => {
     })
     .catch((err) => {
       console.log('caught err---> ' + err);
-      // res.end();
-      next();
+      res.redirect('/login');
     });
 });
 
@@ -89,46 +89,21 @@ app.get('/logout', (req, res, next) => {
     .then(() => {
       req.cookies = null;
       res.redirect('/');
+    })
+    .error((error) => {
+      throw new Error(error);
+    })
+    .catch((error) => {
+      console.log(error);
     });
 });
 
-/************************************************************/
-// Handle the code parameter route last - if all other routes fail
-// assume the route is a short code and try and handle it here.
-// If the short-code doesn't exist, send the user to '/'
-/************************************************************/
+app.use('/', Auth.verifySession);
+app.use('/create', Auth.verifySession);
+app.use('/links', Auth.verifySession);
+app.use('/:code', Auth.verifySession);
 
 
-app.get('/:code', (req, res, next) => {
-
-  return models.Links.get({ code: req.params.code })
-    .tap(link => {
-
-      if (!link) {
-        throw new Error('Link does not exist');
-      }
-      return models.Clicks.create({ linkId: link.id });
-    })
-    .tap(link => {
-      return models.Links.update(link, { visits: link.visits + 1 });
-    })
-    .then(({ url }) => {
-      res.redirect(url);
-    })
-    .error(error => {
-      res.status(500).send(error);
-    })
-    .catch(() => {
-      res.redirect('/');
-    });
-});
-
-app.use((req, res, next) => {
-  if (!req.isLoggedIn) {
-    // res.req.path = ('/login');
-    res.redirect('/login');
-  }
-});
 
 app.get('/',
   (req, res) => {
@@ -150,5 +125,36 @@ app.get('/links',
         res.status(500).send(error);
       });
   });
+
+/************************************************************/
+// Handle the code parameter route last - if all other routes fail
+// assume the route is a short code and try and handle it here.
+// If the short-code doesn't exist, send the user to '/'
+/************************************************************/
+
+
+app.get('/:code', (req, res, next) => {
+  return models.Links.get({ code: req.params.code })
+    .tap(link => {
+
+      if (!link) {
+        throw new Error('Link does not exist');
+      }
+      return models.Clicks.create({ linkId: link.id });
+    })
+    .tap(link => {
+      return models.Links.update(link, { visits: link.visits + 1 });
+    })
+    .then(({ url }) => {
+      res.redirect(url);
+    })
+    .error(error => {
+      res.status(500).send(error);
+    })
+    .catch(() => {
+      console.log('where routes go to die');
+      res.redirect('/');
+    });
+});
 
 module.exports = app;

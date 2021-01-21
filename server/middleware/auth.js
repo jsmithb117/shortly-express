@@ -2,6 +2,7 @@ const models = require('../models');
 const Promise = require('bluebird');
 
 module.exports.createSession = (req, res, next) => {
+  console.log('creating Session');
   Promise.resolve(models.Sessions.create())
     .then((results) => {
       return models.Sessions.get({id: results.insertId})
@@ -23,7 +24,7 @@ module.exports.createSession = (req, res, next) => {
                     next();
                   });
               } else {
-                req['session'] = {hash: sessionInfo.hash, userId: sessionInfo.id, user: {username: null}};
+                req['session'] = {hash: sessionInfo.hash, userId: sessionInfo.id, user: null};
                 res['cookies'] = {'shortlyid': {value: sessionInfo.hash}};
                 res.cookie('cookieName', sessionInfo.hash, {maxAge: 900000, httpOnly: true});
                 next();
@@ -45,11 +46,17 @@ module.exports.createSession = (req, res, next) => {
 /************************************************************/
 
 module.exports.verifySession = (req, res, next) => {
-//   console.log(req.body);
-
-  if (!req.isLoggedIn) {
+  var boolean = models.Sessions.isLoggedIn(req.session);
+  console.log('verifying session case: ' + boolean);
+  if (!boolean) {
+    console.log('exit');
     res.req.path = ('/login');
-    // res.redirect('/login');
+    res.redirect('/login');
+    // req.isLoggedIn = false;
+  } else {
+    console.log('entrance');
+    res.req.path = ('/');
+    // req.isLoggedIn = true;
   }
   next();
 };
