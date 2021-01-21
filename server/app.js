@@ -19,66 +19,15 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use(cookieParser);
 app.use(Auth.createSession);
 
-app.get('/',
-  (req, res) => {
-    res.render('index');
-  });
 
-app.get('/create',
-  (req, res) => {
-    res.render('index');
-  });
 
-app.get('/links',
-  (req, res, next) => {
-    models.Links.getAll()
-      .then(links => {
-        res.status(200).send(links);
-      })
-      .error(error => {
-        res.status(500).send(error);
-      });
-  });
 
-app.post('/links',
-  (req, res, next) => {
-    var url = req.body.url;
-    if (!models.Links.isValidUrl(url)) {
-      // send back a 404 if link is not valid
-      return res.sendStatus(404);
-    }
 
-    return models.Links.get({ url })
-      .then(link => {
-        if (link) {
-          throw link;
-        }
-        return models.Links.getUrlTitle(url);
-      })
-      .then(title => {
-        return models.Links.create({
-          url: url,
-          title: title,
-          baseUrl: req.headers.origin
-        });
-      })
-      .then(results => {
-        return models.Links.get({ id: results.insertId });
-      })
-      .then(link => {
-        throw link;
-      })
-      .error(error => {
-        res.status(500).send(error);
-      })
-      .catch(link => {
-        res.status(200).send(link);
-      });
-  });
 
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+
 
 app.post('/login', (req, res, next) => {
   var username = req.body.username;
@@ -92,6 +41,7 @@ app.post('/login', (req, res, next) => {
     .then((boolean) => {
       if (boolean) {
         console.log('successful login');
+        req.isLoggedIn = true;
         res.redirect('/');
         res.end();
       } else {
@@ -100,9 +50,11 @@ app.post('/login', (req, res, next) => {
     })
     .catch((err) => {
       console.log('caught err---> ' + err);
-      res.redirect('/login');
+      // res.end();
+      next();
     });
 });
+
 
 app.post('/signup', (req, res, next) => {
   var username = req.body.username;
@@ -129,14 +81,14 @@ app.post('/signup', (req, res, next) => {
     });
 });
 
+
 app.get('/logout', (req, res, next) => {
-  console.log('get');
-  console.log('removing hash: ' + req.session.hash);
+  // console.log('get');
+  // console.log('removing hash: ' + req.session.hash);
   models.Sessions.deleteAll()
     .then(() => {
       req.cookies = null;
       res.redirect('/');
-      next();
     });
 });
 
@@ -145,6 +97,7 @@ app.get('/logout', (req, res, next) => {
 // assume the route is a short code and try and handle it here.
 // If the short-code doesn't exist, send the user to '/'
 /************************************************************/
+
 
 app.get('/:code', (req, res, next) => {
 
@@ -169,5 +122,33 @@ app.get('/:code', (req, res, next) => {
       res.redirect('/');
     });
 });
+
+app.use((req, res, next) => {
+  if (!req.isLoggedIn) {
+    // res.req.path = ('/login');
+    res.redirect('/login');
+  }
+});
+
+app.get('/',
+  (req, res) => {
+    res.render('index');
+  });
+
+app.get('/create',
+  (req, res) => {
+    res.render('index');
+  });
+
+app.get('/links',
+  (req, res, next) => {
+    models.Links.getAll()
+      .then(links => {
+        res.status(200).send(links);
+      })
+      .error(error => {
+        res.status(500).send(error);
+      });
+  });
 
 module.exports = app;

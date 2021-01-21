@@ -45,5 +45,11 @@ module.exports.createSession = (req, res, next) => {
 /************************************************************/
 
 module.exports.verifySession = (req, res, next) => {
+//   console.log(req.body);
 
+  if (!req.isLoggedIn) {
+    res.req.path = ('/login');
+    // res.redirect('/login');
+  }
+  next();
 };
