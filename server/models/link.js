@@ -23,12 +23,13 @@ class Links extends Model {
    * as a string or is rejected with the error that occured.
    */
   getUrlTitle(url) {
+    console.log('getUrlTitle function-> ' + url);
     return request(url).spread((response, html) => {
       let tag = /<title>(.*)<\/title>/;
       let match = response.body.match(tag);
       let title = match ? match[1] : url;
       return title;
-    }); 
+    });
   }
 
   /**

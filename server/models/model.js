@@ -83,10 +83,17 @@ class Model {
    */
   update(options, values) {
     let parsedOptions = parseData(options);
+    // console.log('updating visits in models.update');
+    // console.log('options: ', options);
+    // console.log('value: ', value);
+
     let queryString = `UPDATE ${this.tablename} SET ? WHERE ${parsedOptions.string.join(' AND ')}`;
+    console.log(queryString, parsedOptions);
     return executeQuery(queryString, Array.prototype.concat(values, parsedOptions.values));
   }
-
+  // let parsedOptions = parseData(options);
+  // let queryString = `UPDATE ${this.tablename} SET ? WHERE ${parsedOptions.string.join(' AND ')}`;
+  // return executeQuery(queryString, Array.prototype.concat(values, parsedOptions.values));
   /**
    * Deletes a record or records in the table.
    * @param {Object} options - An object where the keys are column names and
